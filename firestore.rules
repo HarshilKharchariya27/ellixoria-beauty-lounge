@@ -1,0 +1,91 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function admin() {
+      return signedIn() &&
+        request.auth.token.admin == true &&
+        request.auth.token.email.lower() in [
+          'harshilkharchariya27@gmail.com',
+          'beautyloungeellixoria@gmail.com'
+        ];
+    }
+
+    function owner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    match /siteSettings/{settingId} {
+      allow read: if settingId == 'main';
+      allow write: if admin();
+    }
+
+    match /offers/{offerId} {
+      allow read: if resource.data.active == true;
+      allow write: if admin();
+    }
+
+    match /serviceCategories/{categoryId} {
+      allow read: if resource.data.active == true;
+      allow write: if admin();
+    }
+
+    match /services/{serviceId} {
+      allow read: if resource.data.active == true;
+      allow write: if admin();
+    }
+
+    match /staff/{staffId} {
+      allow read: if resource.data.active == true;
+      allow write: if admin();
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if admin();
+    }
+
+    match /slotLocks/{lockId} {
+      allow read, write: if admin();
+    }
+
+    match /products/{productId} {
+      allow read: if resource.data.active == true;
+      allow write: if admin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if admin();
+    }
+
+    match /wishlistItems/{itemId} {
+      allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    match /galleryImages/{imageId} {
+      allow read: if resource.data.active == true;
+      allow write: if admin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if admin() ||
+        resource.data.status == 'approved' ||
+        (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if admin();
+    }
+
+    match /users/{uid} {
+      allow read: if admin() || owner(uid);
+      allow create, delete: if false;
+      allow update: if owner(uid) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['displayName', 'photoURL']);
+    }
+  }
+}

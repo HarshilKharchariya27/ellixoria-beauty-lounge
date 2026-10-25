@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function admin() {
+      return request.auth != null &&
+        request.auth.token.admin == true &&
+        request.auth.token.email.lower() in [
+          'harshilkharchariya27@gmail.com',
+          'beautyloungeellixoria@gmail.com'
+        ];
+    }
+
+    function validAdminImage() {
+      return request.resource.size <= 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    match /offers/{path=**} {
+      allow read: if true;
+      allow write: if admin() && (request.resource == null || validAdminImage());
+    }
+
+    match /services/{path=**} {
+      allow read: if true;
+      allow write: if admin() && (request.resource == null || validAdminImage());
+    }
+
+    match /products/{path=**} {
+      allow read: if true;
+      allow write: if admin() && (request.resource == null || validAdminImage());
+    }
+
+    match /gallery/{path=**} {
+      allow read: if true;
+      allow write: if admin() && (request.resource == null || validAdminImage());
+    }
+
+    match /staff/{path=**} {
+      allow read: if true;
+      allow write: if admin() && (request.resource == null || validAdminImage());
+    }
+
+    match /about/{path=**} {
+      allow read: if true;
+      allow write: if admin() && (request.resource == null || validAdminImage());
+    }
+
+    match /reviews/{uid}/{path=**} {
+      allow read: if true;
+      allow write: if request.auth != null &&
+        request.auth.uid == uid &&
+        (request.resource == null ||
+          (request.resource.size <= 3 * 1024 * 1024 &&
+            request.resource.contentType.matches('image/(jpeg|png|webp)')));
+    }
+  }
+}
